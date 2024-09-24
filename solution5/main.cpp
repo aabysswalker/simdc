@@ -35,13 +35,18 @@ int simd(char* string, char* substr, int str_length, int sub_length) {
     int result = 0;
     auto start = std::chrono::high_resolution_clock::now();
 
+    __m128i first_char = _mm_set1_epi8(substr[0]);
     for (int i = 0; i <= str_length - sub_length; i++) {
+        __m128i str_chunk_first = _mm_loadu_si128((__m128i*)(string + i));
+        int mask_first = _mm_movemask_epi8(_mm_cmpeq_epi8(str_chunk_first, first_char));
+        if ((mask_first & 1) == 0) continue;
+
         __m128i str_chunk = _mm_loadu_si128((__m128i*)(string + i));
         __m128i sub_chunk = _mm_loadu_si128((__m128i*)substr);
         int mask = _mm_movemask_epi8(_mm_cmpeq_epi8(str_chunk, sub_chunk));
         if ((mask & ((1 << sub_length) - 1)) == (1 << sub_length) - 1) result++;
     }
-
+    
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
     std::cout << "Simd: " << std::fixed << std::setprecision(10) << duration.count() << " seconds" << std::endl;
@@ -51,7 +56,7 @@ int simd(char* string, char* substr, int str_length, int sub_length) {
 
 int main() {
     char mstr[] = "asdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdf";
-    char substr[] = "asd";
+    char substr[] = "asdfas";
 
     std::cout << loop(mstr, substr, sizeof(mstr) - 1, sizeof(substr) - 1) << std::endl;
 
